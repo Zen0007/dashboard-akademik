@@ -94,7 +94,6 @@ export async function deleteStudent(id) {
 export async function PostMahasiswa(params) {
   try {
     await addDoc(studentsCollection, params);
-    showToast("Mahasiswa berhasil dihapus", "error");
   } catch (error) {
     console.error(error);
     showToast("Gagal menghapus mahasiswa", "error");

@@ -80,8 +80,6 @@ export async function deleteStudent(id) {
       await deleteDoc(doc(db, "students", student.firebaseId));
     }
 
-    students = students.filter((s) => s.id !== id);
-
     showToast("Mahasiswa berhasil dihapus", "error");
 
     showList();

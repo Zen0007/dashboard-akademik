@@ -11,7 +11,7 @@ import {
   setDoc,
 } from "firebase/firestore";
 
-import { showToast, showList } from "./main";
+import { showToast, showList, renderDetail } from "./main";
 
 // TODO: Add SDKs for Firebase products that you want to use
 // https://firebase.google.com/docs/web/setup#available-libraries
@@ -41,6 +41,7 @@ export async function getFiles() {
       firebaseId: docItem.id,
       ...docItem.data(),
     }));
+    console.log(data);
 
     return data;
   } catch (error) {
@@ -53,7 +54,7 @@ export async function getFiles() {
 export async function putFile(studentId, updatedStudent) {
   try {
     const students = await getFiles();
-    const student = students.find((s) => s.id === studentId);
+    const student = students.find((s) => s.firebaseId === studentId);
 
     if (!student?.firebaseId) {
       throw new Error("firebaseId tidak ditemukan");
@@ -73,18 +74,14 @@ export async function putFile(studentId, updatedStudent) {
 
 export async function deleteStudent(id) {
   try {
-    const students = await getFiles();
-    const student = students.find((s) => s.id === id);
+    await deleteDoc(doc(db, "students", id));
 
-    if (student?.firebaseId) {
-      await deleteDoc(doc(db, "students", student.firebaseId));
-    }
+    showToast("Mahasiswa berhasil dihapus", "success");
 
-    showToast("Mahasiswa berhasil dihapus", "error");
-
-    showList();
+    await showList();
   } catch (error) {
-    console.error(error);
+    console.error("Delete student error:", error);
+
     showToast("Gagal menghapus mahasiswa", "error");
   }
 }
@@ -95,5 +92,42 @@ export async function PostMahasiswa(params) {
   } catch (error) {
     console.error(error);
     showToast("Gagal menghapus mahasiswa", "error");
+  }
+}
+export async function deleteCourse(studentId, courseIndex) {
+  try {
+    courseIndex = Number(courseIndex);
+
+    const students = await getFiles();
+
+    const student = students.find((m) => m.firebaseId === studentId);
+
+    if (!student) {
+      showToast("Mahasiswa tidak ditemukan", "error");
+      return;
+    }
+
+    const course = student.matakuliahs?.[courseIndex];
+
+    if (!course) {
+      showToast("Matakuliah tidak ditemukan", "error");
+      return;
+    }
+
+    const updatedCourses = student.matakuliahs.filter(
+      (_, idx) => idx !== courseIndex,
+    );
+
+    await putFile(studentId, {
+      matakuliahs: updatedCourses,
+    });
+
+    await renderDetail(studentId);
+
+    showToast(`Matakuliah "${course.nama}" dihapus`, "success");
+  } catch (error) {
+    console.error("Delete course error:", error);
+
+    showToast("Gagal menghapus matakuliah", "error");
   }
 }

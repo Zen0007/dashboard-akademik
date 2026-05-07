@@ -1,4 +1,10 @@
-import { getFiles, deleteStudent, putFile, PostMahasiswa } from "./firebase";
+import {
+  getFiles,
+  deleteStudent,
+  putFile,
+  PostMahasiswa,
+  deleteCourse,
+} from "./firebase";
 
 /* ========================================
            FUNGSI UTILITAS
@@ -176,10 +182,14 @@ async function renderList() {
     .map((s, i) => {
       const ipk = hitungIPK(s.matakuliahs);
       const rata = rataRata(s.matakuliahs);
+
+      console.log(s.firebaseId, i);
       return `
                     <article class="student-card" style="animation-delay:${i * 0.06}s"
-                             onclick="showDetail(${s.id})" tabindex="0"
-                             onkeydown="if(event.key==='Enter')showDetail(${s.id})"
+                             onclick="showDetail('${s.firebaseId}')" tabindex="0"
+                             onkeydown="if(event.key==='Enter')showDetail('${
+                               s.firebaseId
+                             }')"
                              aria-label="Detail ${s.nama}">
                         <div class="card-top">
                             <div style="display:flex;align-items:center;gap:12px">
@@ -219,9 +229,10 @@ async function renderList() {
 /* ========================================
            RENDER: DETAIL MAHASISWA
 ======================================= */
-async function renderDetail(studentId) {
+export async function renderDetail(studentId) {
+  console.log(studentId);
   const students = await getFiles();
-  const s = students.find((m) => m.id === studentId);
+  const s = students.find((m) => m.firebaseId === studentId);
   if (!s) return;
 
   const ipk = hitungIPK(s.matakuliahs);
@@ -234,6 +245,7 @@ async function renderDetail(studentId) {
   });
 
   const container = document.getElementById("detailView");
+  console.log(ipk);
   container.innerHTML = `
                 <div class="detail-view">
                     <div class="detail-header">
@@ -244,13 +256,17 @@ async function renderDetail(studentId) {
                         </button>
                         <div class="detail-title">Detail Mahasiswa</div>
                         <div class="detail-actions">
-                            <button class="btn btn-accent btn-sm" onclick="openModal('addCourse', ${s.id})">
+                            <button class="btn btn-accent btn-sm" onclick="openModal('addCourse', '${
+                              s.firebaseId
+                            }')">
                                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
                                     <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
                                 </svg>
                                 Tambah Matakuliah
                             </button>
-                            <button class="btn btn-danger btn-sm" onclick="confirmDeleteStudent(${s.id})" id="deleteStudentBtn${s.id}">
+                            <button class="btn btn-danger btn-sm" onclick="confirmDeleteStudent('${
+                              s.firebaseId
+                            }')" id="deleteStudentBtn${s.firebaseId}">
                                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                                     <polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/>
                                 </svg>
@@ -258,7 +274,7 @@ async function renderDetail(studentId) {
                             </button>
                         </div>
                     </div>
-                    <div id="confirmBarStudent${s.id}"></div>
+                    <div id="confirmBarStudent${s.firebaseId}"></div>
 
                     <!-- Info Card -->
                     <div class="info-card">
@@ -321,7 +337,9 @@ async function renderDetail(studentId) {
                                         const m = nilaiToMutu(mk.nilai);
                                         const nm = m.bobot * mk.sks;
                                         return `
-                                            <tr id="courseRow${s.id}_${idx}">
+                                            <tr id="courseRow${
+                                              s.firebaseId
+                                            }_${idx}">
                                                 <td style="color:var(--text-3)">${idx + 1}</td>
                                                 <td style="font-weight:500">${mk.nama}</td>
                                                 <td>${mk.sks}</td>
@@ -331,12 +349,18 @@ async function renderDetail(studentId) {
                                                 <td style="font-weight:600">${nm.toFixed(2)}</td>
                                                 <td>
                                                     <div class="table-actions">
-                                                        <button class="icon-btn" onclick="openModal('editCourse',${s.id},${idx})" title="Edit" aria-label="Edit ${mk.nama}">
+                                                        <button class="icon-btn" onclick="openModal('editCourse','${
+                                                          s.firebaseId
+                                                        }',${idx})" title="Edit" aria-label="Edit ${mk.nama}">
                                                             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                                                                 <path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/>
                                                             </svg>
                                                         </button>
-                                                        <button class="icon-btn danger" onclick="confirmDeleteCourse(${s.id},${idx})" title="Hapus" aria-label="Hapus ${mk.nama}" id="delCourseBtn${s.id}_${idx}">
+                                                        <button class="icon-btn danger" onclick="confirmDeleteCourse('${
+                                                          s.firebaseId
+                                                        }',${idx})" title="Hapus" aria-label="Hapus ${mk.nama}" id="delCourseBtn${
+                                                          s.firebaseId
+                                                        }_${idx}">
                                                             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                                                                 <polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/>
                                                             </svg>
@@ -344,13 +368,19 @@ async function renderDetail(studentId) {
                                                     </div>
                                                 </td>
                                             </tr>
-                                            <tr id="confirmRow${s.id}_${idx}" style="display:none">
+                                            <tr id="confirmRow${
+                                              s.firebaseId
+                                            }_${idx}" style="display:none">
                                                 <td colspan="8" style="padding:0">
                                                     <div class="confirm-bar" style="border-radius:0;margin:0">
                                                         <span>Hapus matakuliah "${mk.nama}"?</span>
                                                         <div style="margin-left:auto;display:flex;gap:6px">
-                                                            <button class="btn btn-danger btn-sm" onclick="deleteCourse(${s.id},${idx})">Ya, Hapus</button>
-                                                            <button class="btn btn-ghost btn-sm" onclick="cancelDeleteCourse(${s.id},${idx})">Batal</button>
+                                                            <button class="btn btn-danger btn-sm" onclick="deleteCourse('${
+                                                              s.firebaseId
+                                                            }',${idx})">Ya, Hapus</button>
+                                                            <button class="btn btn-ghost btn-sm" onclick="cancelDeleteCourse('${
+                                                              s.firebaseId
+                                                            }',${idx})">Batal</button>
                                                         </div>
                                                     </div>
                                                 </td>
@@ -445,10 +475,10 @@ async function openModal(mode, studentId, courseIndex) {
                     </div>
                 `;
   } else if (mode === "addCourse") {
-    const s = students.find((m) => m.id === studentId);
+    const s = students.find((m) => m.firebaseId === studentId);
     title = "Tambah Matakuliah";
     submitText = "Simpan";
-    submitAction = `submitAddCourse(${studentId})`;
+    submitAction = `submitAddCourse('${studentId}')`;
     bodyHTML = `
                     <div class="form-group readonly">
                         <label>Nama Mahasiswa</label>
@@ -483,11 +513,11 @@ async function openModal(mode, studentId, courseIndex) {
                     </div>
                 `;
   } else if (mode === "editCourse") {
-    const s = students.find((m) => m.id === studentId);
+    const s = students.find((m) => m.firebaseId === studentId);
     const mk = s.matakuliahs[courseIndex];
     title = "Edit Matakuliah";
     submitText = "Perbarui";
-    submitAction = `submitEditCourse(${studentId},${courseIndex})`;
+    submitAction = `submitEditCourse('${studentId}',${courseIndex})`;
     bodyHTML = `
                     <div class="form-group readonly">
                         <label>Nama Mahasiswa</label>
@@ -652,7 +682,7 @@ async function submitAddCourse(studentId) {
 
   if (!valid) return;
   const students = await getFiles();
-  const s = students.find((m) => m.id === studentId);
+  const s = students.find((m) => m.firebaseId === studentId);
 
   const newCourse = { nama: mk, nilai, sks };
 
@@ -697,7 +727,7 @@ async function submitEditCourse(studentId, courseIndex) {
 
   const students = await getFiles();
 
-  const s = students.find((m) => m.id === studentId);
+  const s = students.find((m) => m.firebaseId === studentId);
 
   const updatedCourses = [...s.matakuliahs];
 
@@ -730,8 +760,8 @@ function confirmDeleteStudent(id) {
                 <div class="confirm-bar">
                     <span>Hapus seluruh students mahasiswa ini?</span>
                     <div style="margin-left:auto;display:flex;gap:6px">
-                        <button class="btn btn-danger btn-sm" onclick="deleteStudent(${id})">Ya, Hapus</button>
-                        <button class="btn btn-ghost btn-sm" onclick="cancelDeleteStudent(${id})">Batal</button>
+                        <button class="btn btn-danger btn-sm" onclick="deleteStudent('${id}')">Ya, Hapus</button>
+                        <button class="btn btn-ghost btn-sm" onclick="cancelDeleteStudent('${id}')">Batal</button>
                     </div>
                 </div>
             `;
@@ -767,28 +797,6 @@ function cancelDeleteCourse(studentId, courseIndex) {
   );
   if (row) row.style.display = "none";
   if (btn) btn.style.display = "flex";
-}
-
-async function deleteCourse(studentId, courseIndex) {
-  // const s = students.find((m) => m.id === studentId);
-  // const nama = s.matakuliahs[courseIndex].nama;
-  // s.matakuliahs.splice(courseIndex, 1);
-  const students = await getFiles();
-
-  const s = students.find((m) => m.id === studentId);
-
-  const nama = s.matakuliahs[courseIndex].nama;
-
-  const updatedCourses = s.matakuliahs.filter((_, idx) => idx !== courseIndex);
-
-  await putFile(studentId, {
-    matakuliahs: updatedCourses,
-  });
-
-  s.matakuliahs = updatedCourses;
-
-  renderDetail(studentId);
-  showToast(`Matakuliah "${nama}" dihapus`, "error");
 }
 
 /* ========================================
